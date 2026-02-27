@@ -66,7 +66,7 @@ export default function Home() {
               >
                 <div className="text-center">
                   <h3 className="font-semibold text-[#000000]">I'm a Teacher</h3>
-                  <p className="text-sm text-[#454545] mt-1">Create and manage live polls</p>
+                  <p className="text-sm text-[#454545] mt-1">Submit answers and view live poll results in real-time.</p>
                 </div>
               </Card>
             </div>

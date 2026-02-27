@@ -66,6 +66,7 @@ export default function TeacherPage() {
     const [showCreateForm, setShowCreateForm] = useState(true)
     const [showDetailedResponses, setShowDetailedResponses] = useState(false)
     const [showAllHistory, setShowAllHistory] = useState(false)
+    const EXPECTED_STUDENTS = 30
 
     useEffect(() => {
         socketService.connect()
@@ -645,12 +646,30 @@ export default function TeacherPage() {
                                                         })}
                                                     </div>
 
-                                                    <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                                        <div className="flex items-center justify-center gap-2 text-gray-600">
-                                                            <Users className="w-5 h-5" />
-                                                            <span className="font-medium">{poll.totalVotes || 0} total responses</span>
-                                                        </div>
-                                                    </div>
+                                        <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-3">
+
+                                                 <div className="flex items-center justify-center gap-2 text-gray-700">
+                                                          <Users className="w-5 h-5" />
+                                                    <span className="font-semibold">
+                                                              {(poll.totalVotes || 0)} / {EXPECTED_STUDENTS} Students Responded
+                                                    </span>
+                                                </div>
+
+                                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                  <div
+                                      className="bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] h-3 transition-all duration-500 ease-out"
+                                        style={{
+                                         width: `${
+                                          Math.min(
+                                              ((poll.totalVotes || 0) / EXPECTED_STUDENTS) * 100,
+                                                     100
+                                                  )
+                                                 }%`
+                                               }}
+                                   ></div>
+                                  </div>
+
+                                   </div>
                                                     
                                                     <div className="flex gap-2 justify-center mt-4">
                                                         <Button

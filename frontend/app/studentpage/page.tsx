@@ -82,7 +82,7 @@ export default function StudentPage() {
       fetchPollHistory() 
     })
 
-    // listen for kick events
+   
     socketService.onKicked(() => {
       if (typeof window !== "undefined") {
         localStorage.removeItem("studentName")
@@ -91,7 +91,7 @@ export default function StudentPage() {
       router.replace("/kicked")
     })
 
-    // register student for participants list
+    
     socketService.studentJoin(storedId, storedName)
 
     checkActivePoll()
@@ -351,15 +351,15 @@ export default function StudentPage() {
           <div className="flex justify-between items-center mb-8">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4 text-black" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-[#000000]">Question 1</h1>
+                <h1 className="text-[26px] font-bold text-black">Question 1</h1>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="w-4 h-4 text-[#373737]" />
-                <span className="font-semibold text-[#FF3B3B]">
-                  {formatTime(timeRemaining)}
+              <div className="flex items-center gap-1 ml-2">
+                <Clock className="w-[18px] h-[18px] text-black" />
+                 <span className="text-red-500 font-semibold text-sm">
+                    {formatTime(timeRemaining)}
                 </span>
               </div>
             </div>
@@ -399,15 +399,15 @@ export default function StudentPage() {
                     </button>
                   )
                 })}
-                {hasSubmitted && (
-                  <p className="pt-4 text-center text-sm text-[#373737]">
-                    Wait for the teacher to ask a new question..
-                  </p>
-                )}
+               
               </div>
             </div>
           </div>
-
+          {hasSubmitted && (
+                  <p className="mt-6 text-center text-lg font-bold text-black">
+                    Wait for the teacher to ask a new question..
+                  </p>
+                )}
           <div className="flex justify-center mt-8">
             <Button
               className="px-12 py-3 rounded-full bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white shadow-md hover:opacity-90"

@@ -74,9 +74,9 @@ export function ChatWidget({ role, displayName }: ChatWidgetProps) {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-40">
+    <div className="fixed bottom-6 right-6 z-50">
       {isOpen && (
-        <div className="mb-4 w-[429px] h-[477px] bg-white rounded-xl shadow-xl border border-[#e6e6e6] overflow-hidden flex flex-col">
+        <div className="absolute bottom-16 right-0 w-[429px] h-[477px] bg-white rounded-xl shadow-xl border border-[#e6e6e6] overflow-hidden flex flex-col">
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v as "chat" | "participants")}
@@ -107,31 +107,39 @@ export function ChatWidget({ role, displayName }: ChatWidgetProps) {
 
             <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 m-0">
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 text-sm">
-                  {allMessages.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={`flex flex-col ${
-                        msg.senderName === displayName ? "items-end" : "items-start"
-                      }`}
-                    >
-                      <span className="text-[10px] text-[#666666] mb-0.5 font-medium">
-                        {msg.senderName}
-                        {msg.senderRole === "teacher" && " (Teacher)"}
-                      </span>
-                      <div
-                        className={`max-w-[75%] rounded-lg px-3 py-2 text-xs ${
-                          msg.senderName === displayName
-                            ? "bg-[#7765DA] text-white"
-                            : "bg-[#373737] text-white"
-                        }`}
-                      >
-                        {msg.message}
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+  {allMessages.map((msg, index) => {
+    const isOwnMessage = msg.senderName === displayName
+
+    return (
+      <div
+        key={index}
+        className={`flex flex-col ${
+          isOwnMessage ? "items-end" : "items-start"
+        }`}
+      >
+        {/* Sender Name */}
+        <span className="text-[11px] text-[#6b6b6b] mb-1 font-medium">
+          {msg.senderName}
+          {msg.senderRole === "teacher" && " (Teacher)"}
+        </span>
+
+        {/* Message Bubble */}
+        <div
+          className={`max-w-[78%] rounded-xl px-4 py-2 text-sm shadow-sm ${
+            isOwnMessage
+              ? "bg-[#7765DA] text-white"
+              : "bg-[#2f2f2f] text-white"
+          }`}
+        >
+          {msg.message}
+        </div>
+      </div>
+    )
+  })}
+
+  <div ref={messagesEndRef} />
+</div>
                 <div className="border-t px-3 py-2 flex gap-2 shrink-0">
                   <Input
                     value={messageInput}
