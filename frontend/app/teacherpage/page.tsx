@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, BarChart3, Users, Plus, Eye, Clock, CheckCircle, XCircle } from "lucide-react"
+import { ChevronLeft, BarChart3, Users, Plus, Eye, Clock, CheckCircle, XCircle, Sparkles } from "lucide-react"
 import { pollAPI } from "@/lib/api"
 import SocketService from "@/lib/socket"
+import { ChatWidget } from "@/components/ChatWidget"
 
 interface PollOption {
     id: number;
@@ -64,6 +65,7 @@ export default function TeacherPage() {
     const [socketService] = useState(() => SocketService.getInstance())
     const [showCreateForm, setShowCreateForm] = useState(true)
     const [showDetailedResponses, setShowDetailedResponses] = useState(false)
+    const [showAllHistory, setShowAllHistory] = useState(false)
 
     useEffect(() => {
         socketService.connect()
@@ -245,14 +247,17 @@ export default function TeacherPage() {
     }
 
     return (
-        <div className="min-h-screen p-6">
+        <div className="min-h-screen p-6 relative">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-6">
                     <div className="flex items-center gap-2 mb-4">
                         <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
                             <ChevronLeft className="w-4 h-4" />
                         </Button>
-                        <Badge className="bg-[#7765DA] text-white">Live Poll</Badge>
+                        <Badge className="bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white px-4 py-1.5 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4" />
+                            Intervue Poll
+                        </Badge>
                     </div>
                     <h1 className="text-3xl font-bold text-[#000000] mb-2">
                         {showDetailedResponses ? "Detailed Responses" : "Let's Get Started"}
@@ -260,7 +265,7 @@ export default function TeacherPage() {
                     <p className="text-[#454545]">
                         {showDetailedResponses 
                             ? "View detailed responses from all students who participated in this poll."
-                            : "You'll have the ability to create and manage polls, ask questions, and monitor your students' responses in real-time."
+                            : <>You'll have the ability to create and manage polls, ask questions, and monitor{" "}<br />your students' responses in real-time.</>
                         }
                     </p>
                 </div>
@@ -395,14 +400,13 @@ export default function TeacherPage() {
                 ) : showCreateForm ? (
                     <div className="space-y-8">
                         {pollHistory.length > 0 && (
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-end items-center">
                                 <Button
-                                    variant="outline"
                                     onClick={() => setShowCreateForm(false)}
-                                    className="border-[#7765DA] text-[#7765DA] hover:bg-[#7765DA] hover:text-white"
+                                    className="bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white px-6 py-2 rounded-full shadow-md hover:opacity-90"
                                 >
-                                    <BarChart3 className="w-4 h-4 mr-2" />
-                                    View All Results
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View Poll history
                                 </Button>
                             </div>
                         )}
@@ -423,14 +427,16 @@ export default function TeacherPage() {
                                     <option>120 seconds</option>
                                 </select>
                             </div>
-                            <textarea
-                                value={questionText}
-                                onChange={(e) => setQuestionText(e.target.value)}
-                                placeholder="Enter your question here..."
-                                className="w-full h-32 p-4 border border-[#d9d9d9] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#7765DA] focus:border-transparent"
-                                maxLength={100}
-                            />
-                            <div className="text-right text-sm text-[#454545] mt-1">{questionText.length}/100</div>
+                            <div className="relative">
+                                <textarea
+                                    value={questionText}
+                                    onChange={(e) => setQuestionText(e.target.value)}
+                                    placeholder="Enter your question here..."
+                                    className="w-full h-32 p-4 pb-7 border border-[#d9d9d9] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#7765DA] focus:border-transparent"
+                                    maxLength={100}
+                                />
+                                <span className="absolute bottom-2 right-3 text-xs text-[#454545]">{questionText.length}/100</span>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -511,24 +517,39 @@ export default function TeacherPage() {
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowCreateForm(true)}
-                                className="border-[#7765DA] text-[#7765DA] hover:bg-[#7765DA] hover:text-white"
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Create New Question
-                            </Button>
-                            <div className="text-sm text-[#454545]">
-                                {pollHistory.length} total poll{pollHistory.length !== 1 ? 's' : ''} • {activePolls.length} active
+                        {pollHistory.length === 0 ? (
+                            <div className="text-center py-16">
+                                <h2 className="text-2xl font-bold mb-4 text-[#000000]">No Polls Yet</h2>
+                                <p className="text-[#454545] mb-8">Create your first question to start engaging with students.</p>
+                                <Button
+                                    className="bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white px-8 py-3 rounded-full shadow-md hover:opacity-90"
+                                    onClick={() => {
+                                        setShowCreateForm(true)
+                                        setShowAllHistory(false)
+                                    }}
+                                >
+                                    + Ask a new question
+                                </Button>
                             </div>
-                        </div>
+                        ) : showAllHistory ? (
+                            <>
+                                <div className="flex justify-between items-center">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowAllHistory(false)}
+                                        className="border-[#7765DA] text-[#7765DA] hover:bg-[#7765DA] hover:text-white"
+                                    >
+                                        <ChevronLeft className="w-4 h-4 mr-2" />
+                                        Back to latest poll
+                                    </Button>
+                                    <div className="text-sm text-[#454545]">
+                                        {pollHistory.length} total poll{pollHistory.length !== 1 ? 's' : ''} • {activePolls.length} active
+                                    </div>
+                                </div>
 
-                        {pollHistory.length > 0 ? (
-                            <div className="space-y-6">
-                                {pollHistory.map((poll, index) => (
-                                    <Card key={poll._id} className="overflow-hidden border-0 shadow-lg">
+                                <div className="space-y-6">
+                                    {pollHistory.map((poll, index) => (
+                                        <Card key={poll._id} className="overflow-hidden border-0 shadow-lg">
                                         <div className="bg-gradient-to-r from-[#373737] to-[#6E6E6E] text-white px-6 py-4">
                                             <div className="flex justify-between items-center">
                                                 <div>
@@ -567,7 +588,7 @@ export default function TeacherPage() {
                                                                     </div>
                                                                     
                                                                     <div className="flex-shrink-0">
-                                                                        <span className="font-bold text-gray-900">{option.percentage || 0}%</span>
+                                                                        <span className="font-bold text-gray-900">{option.votes ?? 0} votes ({option.percentage ?? 0}%)</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -650,28 +671,93 @@ export default function TeacherPage() {
                                                 </div>
                                             )}
                                         </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </>
                         ) : (
-                            <div className="text-center py-16">
-                                <h2 className="text-2xl font-bold mb-4 text-[#000000]">No Polls Yet</h2>
-                                <p className="text-[#454545] mb-8">Create your first question to start engaging with students.</p>
-                            </div>
-                        )}
+                            (() => {
+                                const latestPoll = pollHistory[0]
+                                if (!latestPoll) return null
 
-                        <div className="text-center">
-                            <Button
-                                onClick={handleAskNewQuestion}
-                                className="bg-[#7765DA] hover:bg-[#480fb3] text-white px-8 py-3 text-lg"
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Ask Another Question
-                            </Button>
-                        </div>
+                                const pollId = latestPoll._id
+                                const resultsForLatest = pollId ? pollResultsMap[pollId] : null
+
+                                return (
+                                    <>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h2 className="text-lg font-semibold text-[#000000]">Question</h2>
+                                            <Button
+                                                onClick={() => setShowAllHistory(true)}
+                                                className="bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white px-6 py-2 rounded-full shadow-md hover:opacity-90 flex items-center gap-2"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                                View Poll history
+                                            </Button>
+                                        </div>
+
+                                        <Card className="overflow-hidden border-0 shadow-lg max-w-2xl mx-auto">
+                                            <div className="bg-gradient-to-r from-[#373737] to-[#6E6E6E] text-white px-6 py-4">
+                                                <h4 className="font-medium text-lg">
+                                                    {latestPoll.question}
+                                                </h4>
+                                            </div>
+                                            <CardContent className="p-6">
+                                                <div className="space-y-3">
+                                                    {(resultsForLatest?.options || latestPoll.options || []).map((option: any, index: number) => {
+                                                        const votes = option.votes ?? 0
+                                                        const percentage =
+                                                            resultsForLatest
+                                                                ? option.percentage ?? 0
+                                                                : latestPoll.totalVotes > 0
+                                                                    ? Math.round((votes / latestPoll.totalVotes) * 100)
+                                                                    : 0
+
+                                                        return (
+                                                            <div key={option.id ?? index} className="rounded-lg border border-gray-200 overflow-hidden relative">
+                                                                <div
+                                                                    className="absolute inset-0 bg-[#7765DA] transition-all duration-500 ease-out"
+                                                                    style={{ width: `${percentage}%` }}
+                                                                ></div>
+                                                                <div className="relative flex items-center justify-between p-4 min-h-[60px]">
+                                                                    <div className="flex items-center">
+                                                                        <div className="w-8 h-8 rounded-full bg-white text-gray-700 flex items-center justify-center text-sm font-semibold mr-3 flex-shrink-0 shadow-sm">
+                                                                            {index + 1}
+                                                                        </div>
+                                                                        <span className="font-medium text-gray-900">
+                                                                            {option.text}
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="font-bold text-gray-900">
+                                                                        {votes} ({percentage}%)
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+                                        <div className="flex justify-center mt-8">
+                                            <Button
+                                                className="px-10 py-3 rounded-full bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white shadow-md hover:opacity-90"
+                                                onClick={() => {
+                                                    setShowCreateForm(true)
+                                                    setShowAllHistory(false)
+                                                }}
+                                            >
+                                                + Ask a new question
+                                            </Button>
+                                        </div>
+                                    </>
+                                )
+                            })()
+                        )}
                     </div>
                 )}
             </div>
+            <ChatWidget role="teacher" displayName="Teacher" />
         </div>
     )
 }

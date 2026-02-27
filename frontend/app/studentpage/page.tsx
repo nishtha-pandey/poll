@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, ChevronRight, Users, Clock, CheckCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight, Users, Clock, CheckCircle, Sparkles } from "lucide-react"
 import { pollAPI } from "@/lib/api"
 import SocketService from "@/lib/socket"
+import { ChatWidget } from "@/components/ChatWidget"
 
 interface PollOption {
   id: number;
@@ -33,6 +34,7 @@ export default function StudentPage() {
   const [activePoll, setActivePoll] = useState<ActivePoll | null>(null)
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasSubmitted, setHasSubmitted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [socketService] = useState(() => SocketService.getInstance())
   const [studentId, setStudentId] = useState("")
@@ -43,7 +45,7 @@ export default function StudentPage() {
 
   useEffect(() => {
     setMounted(true)
-    
+
     if (typeof window === 'undefined') return
     
     const storedName = localStorage.getItem('studentName')
@@ -60,7 +62,7 @@ export default function StudentPage() {
     console.log('Credentials found, setting up student page')
     setStudentName(storedName)
     setStudentId(storedId)
-    
+
     socketService.connect()
 
     socketService.onNewPoll((pollData: any) => {
@@ -68,6 +70,7 @@ export default function StudentPage() {
       setActivePoll(pollData)
       setTimeRemaining(pollData.timeRemaining)
       setSelectedAnswer("")
+      setHasSubmitted(false)
       setShowHistory(false)
       fetchPollHistory()
     })
@@ -75,8 +78,21 @@ export default function StudentPage() {
     socketService.onPollEnded(() => {
       setActivePoll(null)
       setTimeRemaining(0)
+      setShowHistory(false)
       fetchPollHistory() 
     })
+
+    // listen for kick events
+    socketService.onKicked(() => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("studentName")
+        localStorage.removeItem("studentId")
+      }
+      router.replace("/kicked")
+    })
+
+    // register student for participants list
+    socketService.studentJoin(storedId, storedName)
 
     checkActivePoll()
     fetchPollHistory()
@@ -84,12 +100,14 @@ export default function StudentPage() {
     return () => {
       socketService.offNewPoll()
       socketService.offPollEnded()
+      socketService.offKicked()
+      socketService.studentLeave()
       socketService.disconnect()
     }
   }, [socketService])
 
   useEffect(() => {
-    if (activePoll && timeRemaining > 0) {
+    if (activePoll && timeRemaining > 0 && !hasSubmitted) {
       const timer = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
@@ -102,7 +120,7 @@ export default function StudentPage() {
 
       return () => clearInterval(timer)
     }
-  }, [activePoll, timeRemaining])
+  }, [activePoll, timeRemaining, hasSubmitted])
 
   const fetchPollHistory = async () => {
     try {
@@ -130,16 +148,16 @@ export default function StudentPage() {
       if (poll) {
         setActivePoll(poll)
         setTimeRemaining(poll.timeRemaining || 0)
+        setHasSubmitted(false)
         setShowHistory(false)
-        if (poll.timeRemaining <= 0) {
-          setShowHistory(true)
-        }
       } else {
-        setShowHistory(true)
+        setActivePoll(null)
+        setShowHistory(false)
       }
     } catch (error) {
       console.error('Error checking active poll:', error)
-      setShowHistory(true)
+      setActivePoll(null)
+      setShowHistory(false)
     } finally {
       setLoading(false)
     }
@@ -168,7 +186,7 @@ export default function StudentPage() {
       })
       
       fetchPollHistory()
-      setShowHistory(true)
+      setHasSubmitted(true)
     } catch (error: any) {
       console.error('Error submitting answer:', error)
       alert(error.error || "Failed to submit answer")
@@ -209,40 +227,49 @@ export default function StudentPage() {
     )
   }
 
-  if (!activePoll || showHistory) {
+  if (!activePoll && !showHistory) {
     return (
-      <div className="min-h-screen p-4">
-        <div className="max-w-4xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-              <Badge className="bg-[#7765DA] text-white">Student View</Badge>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.removeItem('studentName')
-                    localStorage.removeItem('studentId')
-                  }
-                  router.push('/loginpage?role=student')
-                }}
-                className="text-xs"
-              >
-                Change Name
-              </Button>
-            </div>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative">
+        <div className="flex flex-col items-center mb-8">
+          <Badge className="bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white px-4 py-1.5 flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            Intervue Poll
+          </Badge>
+          <div className="mt-8 mb-4">
+            <div className="w-10 h-10 border-4 border-[#4F0DCE] border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-lg font-semibold text-[#000000]">
+            Wait for the teacher to ask questions..
+          </p>
+          <Button
+            className="mt-6 px-6 py-2 rounded-full bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white text-sm shadow-md hover:opacity-90"
+            onClick={() => setShowHistory(true)}
+          >
+            Review previous questions
+          </Button>
+        </div>
+        <ChatWidget role="student" displayName={studentName} />
+      </div>
+    )
+  }
 
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-[#000000] mb-2">
-              {!activePoll ? "Waiting for Question" : "Poll History"}
-            </h1>
-            <p className="text-[#454545] mb-2">
-              Welcome, {studentName}!
-            </p>
-            <p className="text-[#454545]">
-              {!activePoll 
-                ? "Please wait for your teacher to start a new poll. Here are the previous questions:" 
-                : "Thank you for participating! Here are all the questions from this session:"}
-            </p>
+  if (showHistory) {
+    return (
+      <div className="min-h-screen p-4 relative">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <Badge className="bg-[#7765DA] text-white">Student View</Badge>
+              <span className="text-sm text-[#454545]">Review previous questions</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setShowHistory(false)}
+            >
+              Back to waiting
+            </Button>
           </div>
 
           {pollHistory.length === 0 ? (
@@ -280,11 +307,11 @@ export default function StudentPage() {
                   <CardContent>
                     <div className="space-y-2">
                       {poll.options?.map((option: any) => (
-                        <div 
-                          key={option.id} 
+                        <div
+                          key={option.id}
                           className={`p-3 rounded-lg border ${
-                            option.isCorrect 
-                              ? "bg-green-50 border-green-200" 
+                            option.isCorrect
+                              ? "bg-green-50 border-green-200"
                               : "bg-gray-50 border-gray-200"
                           }`}
                         >
@@ -312,110 +339,94 @@ export default function StudentPage() {
             </div>
           )}
         </div>
+        <ChatWidget role="student" displayName={studentName} />
       </div>
     )
   }
 
   if (activePoll && !showHistory) {
     return (
-    <div className="min-h-screen p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-[#000000]">Question</h1>
-              <p className="text-sm text-[#454545]">Welcome, {studentName}</p>
-            </div>
-            <Badge className="bg-[#7765DA] text-white">Live</Badge>
-          </div>
-          <div className="flex items-center gap-2 text-[#454545]">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  localStorage.removeItem('studentName')
-                  localStorage.removeItem('studentId')
-                }
-                router.push('/loginpage?role=student')
-              }}
-              className="mr-4 text-xs"
-            >
-              Change Name
-            </Button>
-            <Users className="w-4 h-4" />
-            <span>{activePoll.totalVotes || 0} participants</span>
-          </div>
-        </div>
-
-        <div className="flex justify-center">
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
-              <CardTitle className="text-[#000000]">Current Question</CardTitle>
-              <div className="flex items-center gap-2 text-sm text-[#454545]">
-                <Clock className="w-4 h-4" />
-                <span>{formatTime(timeRemaining)} remaining</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <h3 className="text-lg font-semibold text-[#000000] mb-4">
-                {activePoll.question}
-              </h3>
-
-              <RadioGroup value={selectedAnswer} onValueChange={setSelectedAnswer}>
-                <div className="space-y-3">
-                  {activePoll.options.map((option) => (
-                    <div 
-                      key={option.id} 
-                      className="flex items-center space-x-2 p-3 border border-[#d9d9d9] rounded-lg hover:bg-[#f1f1f1]"
-                    >
-                      <RadioGroupItem 
-                        value={option.id.toString()} 
-                        id={`option-${option.id}`} 
-                      />
-                      <Label 
-                        htmlFor={`option-${option.id}`} 
-                        className="flex-1 cursor-pointer text-[#000000]"
-                      >
-                        {option.text}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </RadioGroup>
-
-              <Button
-                className="w-full mt-4 bg-[#7765DA] hover:bg-[#480fb3] text-white"
-                disabled={!selectedAnswer || isSubmitting || timeRemaining <= 0}
-                onClick={handleSubmitAnswer}
-              >
-                {isSubmitting ? "Submitting..." : timeRemaining <= 0 ? "Time's Up!" : "Submit Answer"}
+      <div className="min-h-screen p-8 relative">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
+                <ChevronLeft className="w-4 h-4" />
               </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="flex justify-center mt-8">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <div className="flex gap-1">
-              <div className="w-2 h-2 rounded-full bg-[#7765DA]"></div>
-              <div className="w-2 h-2 rounded-full bg-[#d9d9d9]"></div>
-              <div className="w-2 h-2 rounded-full bg-[#d9d9d9]"></div>
+              <div>
+                <h1 className="text-2xl font-bold text-[#000000]">Question 1</h1>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="w-4 h-4 text-[#373737]" />
+                <span className="font-semibold text-[#FF3B3B]">
+                  {formatTime(timeRemaining)}
+                </span>
+              </div>
             </div>
-            <Button variant="outline" size="sm">
-              <ChevronRight className="w-4 h-4" />
+          </div>
+
+          <div className="flex justify-center">
+            <div className="w-full max-w-2xl rounded-xl border border-[#E6E6E6] bg-white shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-[#373737] to-[#373737] text-white px-6 py-3 rounded-t-xl">
+                <p className="text-sm font-medium">
+                  {activePoll.question}
+                </p>
+              </div>
+              <div className="px-6 py-6 space-y-3 bg-[#FFFFFF]">
+                {activePoll.options.map((option) => {
+                  const isSelected = selectedAnswer === option.id.toString()
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setSelectedAnswer(option.id.toString())}
+                      className={`w-full flex items-center gap-3 rounded-lg border text-left transition-all ${
+                        isSelected
+                          ? "border-[#7765DA] bg-[#F2F2F2]"
+                          : "border-[#E6E6E6] bg-[#F7F7F7]"
+                      }`}
+                    >
+                      <div
+                        className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold ${
+                          isSelected ? "bg-[#7765DA] text-white" : "bg-[#E6E6E6] text-[#373737]"
+                        }`}
+                      >
+                        {option.id}
+                      </div>
+                      <span className="py-3 pr-4 text-sm text-[#373737]">
+                        {option.text}
+                      </span>
+                    </button>
+                  )
+                })}
+                {hasSubmitted && (
+                  <p className="pt-4 text-center text-sm text-[#373737]">
+                    Wait for the teacher to ask a new question..
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center mt-8">
+            <Button
+              className="px-12 py-3 rounded-full bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white shadow-md hover:opacity-90"
+              disabled={!selectedAnswer || isSubmitting || timeRemaining <= 0 || hasSubmitted}
+              onClick={handleSubmitAnswer}
+            >
+              {hasSubmitted
+                ? "Submitted"
+                : isSubmitting
+                  ? "Submitting..."
+                  : timeRemaining <= 0
+                    ? "Time's Up!"
+                    : "Submit"}
             </Button>
           </div>
         </div>
+        <ChatWidget role="student" displayName={studentName} />
       </div>
-    </div>
-  )
+    )
   }
 
   return (

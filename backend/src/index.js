@@ -54,7 +54,7 @@ const startServer = async () => {
   
   server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
-    console.log(`Ready to handle polls!`);
+    console.log(`Resilient Polling System ready!`);
   });
 };
 

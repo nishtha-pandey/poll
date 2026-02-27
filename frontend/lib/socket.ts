@@ -1,5 +1,17 @@
 import { io, Socket } from 'socket.io-client';
 
+type ChatMessage = {
+  senderRole: 'teacher' | 'student';
+  senderName: string;
+  message: string;
+  timestamp?: string;
+};
+
+type Participant = {
+  studentId: string;
+  studentName: string;
+};
+
 class SocketService {
   private socket: Socket | null = null;
   private static instance: SocketService;
@@ -13,7 +25,9 @@ class SocketService {
     return SocketService.instance;
   }
 
-  public connect(url: string = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://mypoll-w391.onrender.com'): Socket {
+  public connect(
+    url: string = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5001'
+  ): Socket {
     if (this.socket?.connected) {
       return this.socket;
     }
@@ -49,6 +63,7 @@ class SocketService {
     return this.socket;
   }
 
+  // Poll rooms
   public joinPoll(pollId: string): void {
     if (this.socket) {
       this.socket.emit('join-poll', pollId);
@@ -96,6 +111,69 @@ class SocketService {
       this.socket.off('poll-ended');
     }
   }
+
+  // Participants
+  public studentJoin(studentId: string, studentName: string): void {
+    if (this.socket) {
+      this.socket.emit('student-join', { studentId, studentName });
+    }
+  }
+
+  public studentLeave(): void {
+    if (this.socket) {
+      this.socket.emit('student-leave');
+    }
+  }
+
+  public onParticipantsUpdated(callback: (participants: Participant[]) => void): void {
+    if (this.socket) {
+      this.socket.on('participants-updated', callback);
+    }
+  }
+
+  public offParticipantsUpdated(): void {
+    if (this.socket) {
+      this.socket.off('participants-updated');
+    }
+  }
+
+  public kickStudent(studentId: string): void {
+    if (this.socket) {
+      this.socket.emit('kick-student', { studentId });
+    }
+  }
+
+  public onKicked(callback: () => void): void {
+    if (this.socket) {
+      this.socket.on('kicked', callback);
+    }
+  }
+
+  public offKicked(): void {
+    if (this.socket) {
+      this.socket.off('kicked');
+    }
+  }
+
+  // Chat
+  public sendChatMessage(message: ChatMessage): void {
+    if (this.socket) {
+      this.socket.emit('chat-message', message);
+    }
+  }
+
+  public onChatMessage(callback: (msg: ChatMessage) => void): void {
+    if (this.socket) {
+      this.socket.on('chat-message', callback);
+    }
+  }
+
+  public offChatMessage(): void {
+    if (this.socket) {
+      this.socket.off('chat-message');
+    }
+  }
 }
 
+export type { ChatMessage, Participant };
 export default SocketService;

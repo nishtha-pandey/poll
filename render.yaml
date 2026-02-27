@@ -9,7 +9,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
+      # PORT is set automatically by Render - do not override
+      # MONGODB_URI: Add in Render Dashboard (Settings → Environment) - use sync: false to avoid exposing in repo
       - key: MONGODB_URI
-        value: mongodb+srv://nishthapandey:nishthap123@cluster0.u7j2jha.mongodb.net/?appName=Cluster0
+        sync: false

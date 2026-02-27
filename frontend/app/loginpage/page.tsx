@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft } from "lucide-react"
+import { Sparkles } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,7 +29,7 @@ export default function LoginPage() {
       alert("Please enter your name before continuing")
       return
     }
-    
+
     if (userRole === "student") {
       const studentId = `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       localStorage.setItem('studentName', name.trim())
@@ -46,44 +46,48 @@ export default function LoginPage() {
         <div className="mb-2 flex flex-col items-center">
           <div className="flex items-center mb-4 w-full">
             <div className="flex-1 flex justify-center">
-              <Badge className="bg-[#7765DA] text-white">My Poll</Badge>
+              <Badge className="bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white px-4 py-1.5 flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Intervue Poll
+              </Badge>
             </div>
           </div>
-            <h1 className="text-3xl text-[#000000] mb-2 text-center">
-              <span>Let&apos;s </span>
-              <span className="font-bold">Get Started</span>
-            </h1>
-            <p className="text-[#454545] text-center">
-              If you’re a student, you’ll be able to submit your answers, participate in live polls, and see how your responses compare with your classmates
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4 max-w-md mx-auto mt-8">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-[#000000]">
-              Enter your name
-            </Label>
-            <Input 
-              id="name" 
-              placeholder="Your name" 
-              className="border-[#d9d9d9]" 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-
-
-            <div className="flex justify-center">
-            <Button
-              className="bg-[#7451b6] hover:bg-[#480fb3] text-white px-8"
-              onClick={handleGetStarted}
-              disabled={!userRole || !name.trim()}
-            >
-              Continue
-            </Button>
-            </div>
+          <h1 className="text-3xl text-[#000000] mb-2 text-center">
+            <span>Let&apos;s </span>
+            <span className="font-bold">Get Started</span>
+          </h1>
+          <p className="text-[#454545] text-center">
+            If you&apos;re a student, you&apos;ll be able to <strong>submit your answers</strong>, participate in live{" "}
+            <br />polls, and see how your responses compare with your classmates
+          </p>
         </div>
       </div>
+
+      <div className="space-y-4 max-w-md w-full mx-auto mt-8">
+        <div className="space-y-2">
+          <Label htmlFor="name" className="text-[#000000]">
+            Enter your Name
+          </Label>
+          <Input
+            id="name"
+            placeholder="Your name"
+            className="border-[#d9d9d9]"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleGetStarted() }}
+          />
+        </div>
+
+        <div className="flex justify-center">
+          <Button
+            className="bg-[#7765DA] hover:bg-[#480fb3] text-white px-12 py-2 rounded-full"
+            onClick={handleGetStarted}
+            disabled={!userRole || !name.trim()}
+          >
+            Continue
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }

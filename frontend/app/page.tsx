@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Sparkles } from "lucide-react"
 
 export default function Home() {
   const router = useRouter()
@@ -22,7 +23,10 @@ export default function Home() {
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         <div className="flex justify-center">
-          <Badge className="bg-[#7765DA] text-white">Live Poll</Badge>
+          <Badge className="bg-gradient-to-r from-[#7765DA] to-[#4F0DCE] text-white px-4 py-1.5 flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            Intervue Poll
+          </Badge>
         </div>
         
         <Card className="w-full max-w-2xl mx-auto no-border">
@@ -32,7 +36,8 @@ export default function Home() {
               <span className="font-bold">Live Polling System</span>
             </CardTitle>
             <p className="text-[#454545] mt-2">
-              Please select the role that best describes you to begin using the live polling system
+              Please select the role that best describes you to begin using the live polling{" "}
+              <br />system
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
